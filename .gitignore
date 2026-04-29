@@ -1,0 +1,14 @@
+# 工作区临时文件
+*-workspace/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# 测试产物（本地跑的，不提交）
+evals/runs/
+*.log
+
+# 编辑器
+.vscode/
+.idea/

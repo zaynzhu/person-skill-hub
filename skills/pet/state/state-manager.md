@@ -21,6 +21,7 @@ Path: `~/.pet-buddy/state.json`
   "level": "number - 等级，范围 1-99，初始 1",
   "exp": "number - 经验值，>= 0，初始 0",
   "active": "boolean - 是否活跃，初始 true",
+  "showAscii": "boolean - 是否常驻显示 ASCII 画像，初始 true",
   "createdAt": "string - ISO 8601 创建时间",
   "lastUpdated": "string - ISO 8601 最后更新时间"
 }
@@ -40,6 +41,7 @@ NOTE: Use camelCase field names (createdAt, lastUpdated) NOT snake_case.
   "level": 1,
   "exp": 0,
   "active": true,
+  "showAscii": true,
   "createdAt": "",
   "lastUpdated": ""
 }
@@ -137,7 +139,7 @@ function loadState() {
     return { error: "invalid_json" };
   }
 
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'createdAt', 'lastUpdated'];
   const missingFields = requiredFields.filter(field => !(field in data));
 
   if (missingFields.length > 0) {
@@ -150,7 +152,7 @@ function loadState() {
 
 1. Reads `~/.pet-buddy/state.json`
 2. Parses JSON
-3. Validates required fields (name, type, mood, hunger, bond, level, exp, active, createdAt, lastUpdated)
+3. Validates required fields (name, type, mood, hunger, bond, level, exp, active, showAscii, createdAt, lastUpdated)
 4. Returns state object, or `null` if file doesn't exist, or `{ error: "invalid_json" }` if JSON invalid, or `{ error: "missing_fields", fields: [...] }` if fields missing
 
 ## 7. 状态保存（原子写入）
@@ -198,7 +200,7 @@ function validateState(state) {
   const errors = [];
 
   // Required fields exist
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'createdAt', 'lastUpdated'];
   for (const field of requiredFields) {
     if (!(field in state)) {
       errors.push(`Missing field: ${field}`);

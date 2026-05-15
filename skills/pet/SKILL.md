@@ -28,6 +28,8 @@ Skill 在以下情况下激活：
 | `/pet feed` | 喂食宠物 |
 | `/pet play` | 和宠物玩耍 |
 | `/pet pet` | 抚摸宠物 |
+| `/pet ascii on` | 开启 ASCII 画像常驻显示（每次 AI 回复都带宠物画像） |
+| `/pet ascii off` | 关闭 ASCII 画像常驻显示（仅状态栏显示） |
 | 自然语言提及宠物 | 如"我的宠物怎么样了"、"喂一下小黑"、"跟宠物玩一下" |
 | 首次使用 | 检测到无状态文件时自动触发初始化流程 |
 
@@ -99,6 +101,7 @@ if 用户输入为空:
   "level": 1,
   "exp": 0,
   "active": true,
+  "showAscii": true,
   "createdAt": "ISO 时间戳",
   "lastUpdated": "ISO 时间戳"
 }
@@ -109,10 +112,9 @@ if 用户输入为空:
 ```
 🎉 {name} 来到了你身边！
 
-  ╱╲
- ( •ω•)
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( •ω• )
+   >   <
 
 {name} 现在是你的编程伙伴了！
 当你写代码时，{name} 会陪伴你、为你加油。
@@ -171,6 +173,8 @@ if state.active == false:
 
 根据宠物当前状态，决定显示内容和 ASCII 艺术：
 
+**常驻显示规则**：当 `state.showAscii == true` 且 `state.active == true` 时，AI 的**每次回复**末尾都必须附带宠物 ASCII 画像 + 状态栏。当 `showAscii == false` 时，仅在主动互动（feed/play/pet）或状态查询时显示画像，日常回复不带。
+
 ```
 确定状态标签:
   if hunger >= 80:
@@ -187,34 +191,29 @@ if state.active == false:
 根据宠物类型和状态选择 ASCII 艺术:
 
 猫咪 — hungry:
-  ╱╲
- ( ｏωｏ)  "喵...好饿..."
-  │  │
-  Ｕ  Ｕ
+   /\_/\
+  ( ｏωｏ )  "喵...好饿..."
+   >   <
 
 猫咪 — happy:
-  ╱╲
- ( ≖‿≖)  "喵呜~ 开心！"
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( ≖‿≖ )  "喵呜~ 开心！"
+   >   <
 
 猫咪 — sad:
-  ╱╲
- ( ｡•́︿•̀｡)  "喵..."
-  │  │
-  Ｕ  Ｕ
+   /\_/\
+  ( ｡•́︿•̀｡ )  "喵..."
+   >   <
 
 猫咪 — curious:
-  ╱╲
- ( •̀ω•́)✧  "发现了什么？"
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( •̀ω•́ )✧  "发现了什么？"
+   >   <
 
 猫咪 — idle:
-  ╱╲
- ( •ω•)   "..."
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( •ω• )   "..."
+   >   <
 
 狗狗 — hungry:
   /^_^\
@@ -258,10 +257,9 @@ if state.active == false:
 ```
 小黑 Lv.3  ❤️ 心情:75  🍖 饥饿:30  🤝 好感:60  ✨ 45/300
 
-  ╱╲
- ( ≖‿≖)  "喵呜~ 开心！"
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( ≖‿≖ )  "喵呜~ 开心！"
+   >   <
 ```
 
 ---
@@ -273,6 +271,13 @@ if state.active == false:
 | `/pet on` | 设置 `state.active = true`，保存，显示 `"{name} 醒来了！"` + 渲染宠物 |
 | `/pet off` | 设置 `state.active = false`，保存，显示 `"{name} 去休息了...晚安 💤"` |
 | `/pet status` | 显示完整状态信息（名字、类型、等级、所有属性数值、活跃状态、创建时间） |
+
+`/pet ascii` 指令：
+
+| 指令 | 行为 |
+|------|------|
+| `/pet ascii on` | 设置 `state.showAscii = true`，保存，显示 `"ASCII 画像已开启 🎨"` + 渲染宠物 |
+| `/pet ascii off` | 设置 `state.showAscii = false`，保存，显示 `"ASCII 画像已关闭，宠物仍会出现在状态栏"` |
 
 `/pet status` 完整输出示例：
 
@@ -289,10 +294,9 @@ if state.active == false:
   📅 陪伴天数: {(now - createdAt) / 86400} 天
   🟢 状态: 活跃中
 
-  ╱╲
- ( •ω•)
-  │ │
-  Ｕ Ｕ
+   /\_/\
+  ( •ω• )
+   >   <
 ```
 
 ---
@@ -389,6 +393,7 @@ if 指令 == "pet":
 | `exp` | number | 0+ | 经验值 |
 | `level` | number | 1+ | 等级 |
 | `active` | boolean | - | 是否活跃 |
+| `showAscii` | boolean | - | 是否在 AI 回复中常驻显示 ASCII 画像 |
 | `lastUpdated` | string | ISO 8601 | 最后更新时间 |
 | `createdAt` | string | ISO 8601 | 创建时间 |
 

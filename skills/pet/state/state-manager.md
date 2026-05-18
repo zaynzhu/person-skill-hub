@@ -22,6 +22,7 @@ Path: `~/.pet-buddy/state.json`
   "exp": "number - 经验值，>= 0，初始 0",
   "active": "boolean - 是否活跃，初始 true",
   "showAscii": "boolean - 是否常驻显示 ASCII 画像，初始 true",
+  "frame": "number - 帧计数器，范围 0-999，初始 0，每次触发递增",
   "createdAt": "string - ISO 8601 创建时间",
   "lastUpdated": "string - ISO 8601 最后更新时间"
 }
@@ -42,6 +43,7 @@ NOTE: Use camelCase field names (createdAt, lastUpdated) NOT snake_case.
   "exp": 0,
   "active": true,
   "showAscii": true,
+  "frame": 0,
   "createdAt": "",
   "lastUpdated": ""
 }
@@ -139,7 +141,7 @@ function loadState() {
     return { error: "invalid_json" };
   }
 
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'createdAt', 'lastUpdated'];
   const missingFields = requiredFields.filter(field => !(field in data));
 
   if (missingFields.length > 0) {
@@ -200,7 +202,7 @@ function validateState(state) {
   const errors = [];
 
   // Required fields exist
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'createdAt', 'lastUpdated'];
   for (const field of requiredFields) {
     if (!(field in state)) {
       errors.push(`Missing field: ${field}`);

@@ -102,6 +102,7 @@ if 用户输入为空:
   "exp": 0,
   "active": true,
   "showAscii": true,
+  "frame": 0,
   "createdAt": "ISO 时间戳",
   "lastUpdated": "ISO 时间戳"
 }
@@ -175,96 +176,69 @@ if state.active == false:
 
 **常驻显示规则**：当 `state.showAscii == true` 且 `state.active == true` 时，AI 的**每次回复**末尾都必须附带宠物 ASCII 画像 + 状态栏。当 `showAscii == false` 时，仅在主动互动（feed/play/pet）或状态查询时显示画像，日常回复不带。
 
-```
-确定状态标签:
-  if hunger >= 80:
-    status = "hungry"     // 饥饿
-  elif mood >= 80:
-    status = "happy"      // 开心
-  elif mood < 40:
-    status = "sad"        // 难过
-  elif mood >= 60:
-    status = "curious"    // 好奇
-  else:
-    status = "idle"       // 普通
-
-根据宠物类型和状态选择 ASCII 艺术:
-
-猫咪 — hungry:
-   /\_/\
-  ( ｏωｏ )  "喵...好饿..."
-   >   <
-
-猫咪 — happy:
-   /\_/\
-  ( ≖‿≖ )  "喵呜~ 开心！"
-   >   <
-
-猫咪 — sad:
-   /\_/\
-  ( ｡•́︿•̀｡ )  "喵..."
-   >   <
-
-猫咪 — curious:
-   /\_/\
-  ( •̀ω•́ )✧  "发现了什么？"
-   >   <
-
-猫咪 — idle:
-   /\_/\
-  ( •ω• )   "..."
-   >   <
-
-狗狗 — hungry:
-   / \__
-  ( ｏωｏ )___
-   /         O   "汪...好饿..."
-  /   (_____/
- /_____/   U
-
-狗狗 — happy:
-   / \__
-  ( ≖‿≖ )___
-   /         O   "汪汪！开心！"
-  /   (_____/
- /_____/   U
-
-狗狗 — sad:
-   / \__
-  ( ｡•́︿•̀｡ )___
-   /         O   "呜..."
-  /   (_____/
- /_____/   U
-
-狗狗 — curious:
-   / \__
-  ( •̀ω•́ )✧___
-   /         O   "发现了什么？"
-  /   (_____/
- /_____/   U
-
-狗狗 — idle:
-   / \__
-  ( •ω• )___
-   /         O   "..."
-  /   (_____/
- /_____/   U
-```
-
-渲染输出格式（状态栏）：
+#### 4.1 状态优先级
 
 ```
-{name} Lv.{level}  ❤️ 心情:{mood}  🍖 饥饿:{hunger}  🤝 好感:{bond}  ✨ {exp}/{level*100}
+1. eating    — 互动中（正在吃东西）
+2. playing   — 互动中（正在玩耍）
+3. petting   — 互动中（正在被抚摸）
+4. hungry    — hunger >= 80
+5. angry     — hunger >= 90 && mood < 30
+6. excited   — mood >= 90
+7. happy     — mood >= 80
+8. sleepy    — 长时间闲置 > 30min
+9. curious   — mood >= 60
+10. sad      — mood < 40
+11. confused — 不识别的指令
+12. idle     — 默认
 ```
 
-示例输出：
+#### 4.2 帧选择与描述随机化
+
+每种状态的 ASCII 画像有 2-3 帧，描述文字有 2-4 个变体。根据 `state.frame` 计数器选择：
 
 ```
-小黑 Lv.3  ❤️ 心情:75  🍖 饥饿:30  🤝 好感:60  ✨ 45/300
+frame = state.frame
+selectedFrame = frames[frame % len(frames)]
+selectedDesc = descriptions[frame % len(descriptions)]
+selectedEmoji = emojis[frame % len(emojis)]
+```
 
-   /\_/\
-  ( ≖‿≖ )  "喵呜~ 开心！"
-   >   <
+帧计数器递增时机：
+- 每次 statusLine 刷新（status-combined.sh）
+- 每次 hook 触发（hook-code-success.sh、hook-bash-result.sh）
+- 每次时间衰减（apply-decay.sh）
+- 状态变化时：重置为 0（新状态从第一帧开始）
+
+frame 范围：0-999，递增后取模 `frame = (frame + 1) % 1000`
+
+#### 4.3 状态栏格式
+
+```
+{icon} {name} Lv.{level} {emoji} | ❤️{mood} 🍖{hunger} 🤝{bond} ✨{exp}/{level*100} {description}
+```
+
+其中：
+- `icon`: 猫=🐱，狗=🐶
+- `emoji`: 从状态对应的 emoji 循环中选择
+- `description`: 从状态对应的描述变体中选择
+
+示例：
+```
+帧0: 🐱 mia Lv.3 😊 | ❤️85 🍖35 🤝63 ✨66/100
+帧1: 🐱 mia Lv.3 😸 | ❤️85 🍖35 🤝63 ✨66/100 舔了舔爪子
+帧2: 🐱 mia Lv.3 😻 | ❤️85 🍖35 🤝63 ✨66/100 伸了个懒腰
+```
+
+#### 4.4 ASCII 画像选择
+
+根据 `(petType, stateLabel, frame)` 选择具体帧。详见 `pets/cat.md` 和 `pets/dog.md` 中的多帧定义。
+
+示例（猫咪 happy）：
+```
+帧0:   /\_/\ ( ≖‿≖ )  喵呜~   > ^ <
+帧1:   /\_/\ ( ≖‿≖ )  喵呜~   > ~ <   ← 尾巴摆动
+帧2:   /\_/\ ( -‿- )  喵~   > ^ <   ← 眨眼
 ```
 
 ---
@@ -399,6 +373,7 @@ if 指令 == "pet":
 | `level` | number | 1+ | 等级 |
 | `active` | boolean | - | 是否活跃 |
 | `showAscii` | boolean | - | 是否在 AI 回复中常驻显示 ASCII 画像 |
+| `frame` | number | 0-999 | 帧计数器，用于动画帧和描述循环选择 |
 | `lastUpdated` | string | ISO 8601 | 最后更新时间 |
 | `createdAt` | string | ISO 8601 | 创建时间 |
 

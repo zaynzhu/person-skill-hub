@@ -23,6 +23,8 @@ Path: `~/.pet-buddy/state.json`
   "active": "boolean - 是否活跃，初始 true",
   "showAscii": "boolean - 是否常驻显示 ASCII 画像，初始 true",
   "frame": "number - 帧计数器，范围 0-999，初始 0，每次触发递增",
+  "soundEnabled": "boolean - 是否启用音效，初始 false",
+  "gameHighScore": "number - 接食物小游戏最高分，初始 0",
   "createdAt": "string - ISO 8601 创建时间",
   "lastUpdated": "string - ISO 8601 最后更新时间"
 }
@@ -44,6 +46,8 @@ NOTE: Use camelCase field names (createdAt, lastUpdated) NOT snake_case.
   "active": true,
   "showAscii": true,
   "frame": 0,
+  "soundEnabled": false,
+  "gameHighScore": 0,
   "createdAt": "",
   "lastUpdated": ""
 }
@@ -141,7 +145,7 @@ function loadState() {
     return { error: "invalid_json" };
   }
 
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'soundEnabled', 'gameHighScore', 'createdAt', 'lastUpdated'];
   const missingFields = requiredFields.filter(field => !(field in data));
 
   if (missingFields.length > 0) {
@@ -154,7 +158,7 @@ function loadState() {
 
 1. Reads `~/.pet-buddy/state.json`
 2. Parses JSON
-3. Validates required fields (name, type, mood, hunger, bond, level, exp, active, showAscii, createdAt, lastUpdated)
+3. Validates required fields (name, type, mood, hunger, bond, level, exp, active, showAscii, frame, soundEnabled, gameHighScore, createdAt, lastUpdated)
 4. Returns state object, or `null` if file doesn't exist, or `{ error: "invalid_json" }` if JSON invalid, or `{ error: "missing_fields", fields: [...] }` if fields missing
 
 ## 7. 状态保存（原子写入）
@@ -202,7 +206,7 @@ function validateState(state) {
   const errors = [];
 
   // Required fields exist
-  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'createdAt', 'lastUpdated'];
+  const requiredFields = ['name', 'type', 'mood', 'hunger', 'bond', 'level', 'exp', 'active', 'showAscii', 'frame', 'soundEnabled', 'gameHighScore', 'createdAt', 'lastUpdated'];
   for (const field of requiredFields) {
     if (!(field in state)) {
       errors.push(`Missing field: ${field}`);
@@ -224,6 +228,16 @@ function validateState(state) {
     errors.push('active must be a boolean');
   }
 
+  // soundEnabled is boolean
+  if ('soundEnabled' in state && typeof state.soundEnabled !== 'boolean') {
+    errors.push('soundEnabled must be a boolean');
+  }
+
+  // gameHighScore is non-negative number
+  if ('gameHighScore' in state && (typeof state.gameHighScore !== 'number' || state.gameHighScore < 0)) {
+    errors.push('gameHighScore must be a non-negative number');
+  }
+
   return errors;
 }
 ```
@@ -232,6 +246,8 @@ function validateState(state) {
 - `name` is non-empty string
 - `type` is `'cat'` or `'dog'`
 - `active` is boolean
+- `soundEnabled` is boolean
+- `gameHighScore` is non-negative number
 
 ## 9. 升级检查
 

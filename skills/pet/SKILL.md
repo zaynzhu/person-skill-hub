@@ -30,6 +30,9 @@ Skill 在以下情况下激活：
 | `/pet pet` | 抚摸宠物 |
 | `/pet ascii on` | 开启 ASCII 画像常驻显示（每次 AI 回复都带宠物画像） |
 | `/pet ascii off` | 关闭 ASCII 画像常驻显示（仅状态栏显示） |
+| `/pet sound on` | 开启音效（BEL 终端声音） |
+| `/pet sound off` | 关闭音效 |
+| `/pet play` | 和宠物玩耍（增强模式下启动接食物小游戏） |
 | 自然语言提及宠物 | 如"我的宠物怎么样了"、"喂一下小黑"、"跟宠物玩一下" |
 | 首次使用 | 检测到无状态文件时自动触发初始化流程 |
 
@@ -59,6 +62,33 @@ elif 文件不存在:
 ```
 
 状态文件路径：`~/.pet-buddy/state.json`
+
+---
+
+### 1.5 增强模式检测
+
+每次 skill 触发时，检测增强模式可用性：
+
+```
+增强模式条件（全部满足）：
+  1. node 命令可用（command -v node 成功）
+  2. ~/.pet-buddy/pet-renderer.mjs 存在
+
+if 增强模式可用:
+  enhanceMode = true
+  渲染输出使用 ANSI 256-color 着色
+  音效系统可用
+  接食物小游戏可用
+else:
+  enhanceMode = false
+  使用纯文本 Bash 回退渲染
+  音效和小游戏不可用
+```
+
+增强模式提供：
+- **ANSI 彩色渲染**：宠物 ASCII 画像是彩色的（猫=橙色系，狗=棕色系）
+- **音效**：成功/失败/升级时播放 BEL 终端声音
+- **接食物小游戏**：`/pet play` 启动交互式小游戏
 
 ---
 
@@ -103,6 +133,8 @@ if 用户输入为空:
   "active": true,
   "showAscii": true,
   "frame": 0,
+  "soundEnabled": false,
+  "gameHighScore": 0,
   "createdAt": "ISO 时间戳",
   "lastUpdated": "ISO 时间戳"
 }
@@ -173,6 +205,10 @@ if state.active == false:
 ### 4. 渲染阶段
 
 根据宠物当前状态，决定显示内容和 ASCII 艺术：
+
+**增强模式渲染**：当 `enhanceMode == true` 时，使用 `node ~/.pet-buddy/pet-renderer.mjs --mode=render --pet={type} --state={stateLabel} --frame={frame}` 输出带 ANSI 256-color 的彩色 ASCII 画像。猫为橙色系（primary:208, secondary:202），狗为棕色系（primary:130, secondary:95）。彩色输出仅在支持 ANSI 的终端中可见。
+
+**Bash 回退渲染**：当增强模式不可用时，使用纯文本 ASCII 画像，`sed 's/\[[0-9]*\]//g'` 剥离颜色标记。
 
 **常驻显示规则**：当 `state.showAscii == true` 且 `state.active == true` 时，AI 的**每次回复**末尾都必须附带宠物 ASCII 画像 + 状态栏。当 `showAscii == false` 时，仅在主动互动（feed/play/pet）或状态查询时显示画像，日常回复不带。
 
@@ -258,6 +294,21 @@ frame 范围：0-999，递增后取模 `frame = (frame + 1) % 1000`
 | `/pet ascii on` | 设置 `state.showAscii = true`，保存，显示 `"ASCII 画像已开启 🎨"` + 渲染宠物 |
 | `/pet ascii off` | 设置 `state.showAscii = false`，保存，显示 `"ASCII 画像已关闭，宠物仍会出现在状态栏"` |
 
+`/pet sound` 指令（需要增强模式）：
+
+| 指令 | 行为 |
+|------|------|
+| `/pet sound on` | 设置 `state.soundEnabled = true`，保存，播放一声 BEL 确认音效已开启 |
+| `/pet sound off` | 设置 `state.soundEnabled = false`，保存，显示 `"音效已关闭 🔇"` |
+
+音效事件映射：
+- 代码成功 / 测试通过 → `success` / `testPass`（1-2 声 BEL）
+- 测试失败 → `testFail`（1 声 BEL）
+- 升级 → `levelUp`（3 声 BEL）
+- 互动 → `interact`（1 声 BEL）
+
+音效通过 `node ~/.pet-buddy/pet-renderer.mjs --mode=sound --event={type}` 播放，仅在 `soundEnabled == true` 且终端为 TTY 时生效。
+
 `/pet status` 完整输出示例：
 
 ```
@@ -298,10 +349,17 @@ if 指令 == "feed":
   显示："{name} 吃得很开心！🍖"
 
 if 指令 == "play":
-  state.mood = min(state.mood + 10, 100)
-  state.bond = min(state.bond + 5, 100)
-  state.hunger = min(state.hunger + 5, 100)
-  显示："{name} 玩得很开心！🎾"
+  if enhanceMode && stdin.isTTY:
+    // 增强模式：启动接食物小游戏
+    运行：node ~/.pet-buddy/pet-renderer.mjs --mode=game
+    游戏结束后自动更新 state.json（mood/hunger/exp/bond/gameHighScore）
+    显示游戏结果
+  else:
+    // 标准模式：简单互动
+    state.mood = min(state.mood + 10, 100)
+    state.bond = min(state.bond + 5, 100)
+    state.hunger = min(state.hunger + 5, 100)
+    显示："{name} 玩得很开心！🎾"
 
 if 指令 == "pet":
   state.mood = min(state.mood + 3, 100)
@@ -374,6 +432,8 @@ if 指令 == "pet":
 | `active` | boolean | - | 是否活跃 |
 | `showAscii` | boolean | - | 是否在 AI 回复中常驻显示 ASCII 画像 |
 | `frame` | number | 0-999 | 帧计数器，用于动画帧和描述循环选择 |
+| `soundEnabled` | boolean | - | 是否启用音效（BEL 终端声音） |
+| `gameHighScore` | number | 0+ | 接食物小游戏最高分 |
 | `lastUpdated` | string | ISO 8601 | 最后更新时间 |
 | `createdAt` | string | ISO 8601 | 创建时间 |
 

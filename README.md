@@ -1,11 +1,17 @@
 <div align="center">
 
-# ✦ Skill Hub
+# ✦ Zaynzhu Skills
 
 **个人 AI 技能合集** · 将专业工作流封装为可复用的指令集
 
-[![Skills](https://img.shields.io/badge/skills-8-6366f1?style=flat-square&logo=sparkles&logoColor=white)](./skills/)
-[![License](https://img.shields.io/badge/license-MIT-0ea5e9?style=flat-square)](./LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/zaynzhu/zaynzhu-skills?style=flat&logo=github&color=yellow&label=Stars)](https://github.com/zaynzhu/zaynzhu-skills/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/zaynzhu/zaynzhu-skills?style=flat&logo=github&color=purple&label=Forks)](https://github.com/zaynzhu/zaynzhu-skills/network)
+[![Last Commit](https://img.shields.io/github/last-commit/zaynzhu/zaynzhu-skills?logo=github&label=Last%20Commit)](https://github.com/zaynzhu/zaynzhu-skills/commits/master)
+[![Skills](https://img.shields.io/badge/Skills-8-6366f1?style=flat&logo=sparkles&logoColor=white)](./skills/)
+[![Platforms](https://img.shields.io/badge/Platforms-Claude%20Code%20%7C%20Gemini%20CLI%20%7C%20Codex-3775A9?style=flat&logo=clio&logoColor=white)](./)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Bash](https://img.shields.io/badge/Bash-4.0+-4EAA25?style=flat&logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
+[![License](https://img.shields.io/badge/License-MIT-0ea5e9?style=flat&logo=opensourceinitiative&logoColor=white)](./LICENSE)
 
 </div>
 
@@ -111,7 +117,7 @@ git clone https://github.com/zaynzhu/zaynzhu-skills.git
 ## 目录结构
 
 ```
-skill-hub/
+zaynzhu-skills/
 ├── README.md
 ├── docs/                   ← 各技能使用文档
 │   ├── enhanced-skill-creator.md
